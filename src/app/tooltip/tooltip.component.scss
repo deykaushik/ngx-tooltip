@@ -1,0 +1,14 @@
+:root {
+  --tooltip-bg: #000;
+  --tooltip-color: #fff;
+  --tooltip-padding: 8px;
+  --tooltip-radius: 6px;
+}
+
+.ngx-tooltip {
+  position: relative;
+  background-color: var(--tooltip-bg, #000);
+  color: var(--tooltip-color, #fff);
+  padding: var(--tooltip-padding, 8px);
+  border-radius: var(--tooltip-radius, 6px);
+}
