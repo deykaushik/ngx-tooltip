@@ -7,7 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { PositionType } from '../core/utils/overlay.utils';
+import { TooltipPositionType } from '../core/utils/overlay.utils';
 
 @Component({
   standalone: true,
@@ -18,18 +18,12 @@ import { PositionType } from '../core/utils/overlay.utils';
   encapsulation: ViewEncapsulation.None,
 })
 export class NgxTooltipComponent {
-  private _tooltipClassName = 'ngx-tooltip';
   private _cdr = inject(ChangeDetectorRef);
 
   title = signal<string>('');
-  placementClass = signal<PositionType>('' as PositionType);
-  classMap: { [key: string]: boolean } = {};
+  placementClass = signal<TooltipPositionType>('' as TooltipPositionType);
 
-  updateStyle() {
-    this.classMap = {
-      [this._tooltipClassName]: true,
-      [`${this._tooltipClassName}-placement-${this.placementClass()}`]: true,
-    };
+  detectChanges() {
     this._cdr.detectChanges();
   }
 }

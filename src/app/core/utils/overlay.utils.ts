@@ -1,13 +1,13 @@
-import { ConnectionPositionPair } from '@angular/cdk/overlay';
+import {
+  ConnectedOverlayPositionChange,
+  ConnectionPositionPair,
+} from '@angular/cdk/overlay';
 
 export type PositionType = keyof typeof POSITION_MAP;
+export type TooltipPositionType = 'top' | 'bottom' | 'left' | 'right';
 
 export const POSITION_MAP = {
   top: new ConnectionPositionPair(
-    { originX: 'center', originY: 'top' },
-    { overlayX: 'center', overlayY: 'bottom' }
-  ),
-  topCenter: new ConnectionPositionPair(
     { originX: 'center', originY: 'top' },
     { overlayX: 'center', overlayY: 'bottom' }
   ),
@@ -35,10 +35,6 @@ export const POSITION_MAP = {
     { originX: 'center', originY: 'bottom' },
     { overlayX: 'center', overlayY: 'top' }
   ),
-  bottomCenter: new ConnectionPositionPair(
-    { originX: 'center', originY: 'bottom' },
-    { overlayX: 'center', overlayY: 'top' }
-  ),
   bottomLeft: new ConnectionPositionPair(
     { originX: 'start', originY: 'bottom' },
     { overlayX: 'start', overlayY: 'top' }
@@ -59,4 +55,20 @@ export const POSITION_MAP = {
     { originX: 'start', originY: 'bottom' },
     { overlayX: 'end', overlayY: 'bottom' }
   ),
+};
+
+export const getPositionClass = (change: ConnectedOverlayPositionChange) => {
+  const { connectionPair } = change;
+  for (const pos in POSITION_MAP) {
+    const configConnectedPair = POSITION_MAP[pos as PositionType];
+    if (
+      configConnectedPair.originX === connectionPair.originX &&
+      configConnectedPair.originY === connectionPair.originY &&
+      configConnectedPair.overlayX === connectionPair.overlayX &&
+      configConnectedPair.overlayX === connectionPair.overlayX
+    ) {
+      return pos;
+    }
+  }
+  return null;
 };

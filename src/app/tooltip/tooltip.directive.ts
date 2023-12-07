@@ -7,7 +7,6 @@ import {
 } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import {
-  ChangeDetectorRef,
   Directive,
   ElementRef,
   EventEmitter,
@@ -19,7 +18,11 @@ import {
   inject,
 } from '@angular/core';
 import { Subject, fromEvent, takeUntil } from 'rxjs';
-import { POSITION_MAP, PositionType } from '../core/utils/overlay.utils';
+import {
+  POSITION_MAP,
+  TooltipPositionType,
+  getPositionClass,
+} from '../core/utils/overlay.utils';
 import { NgxTooltipComponent } from './tooltip.component';
 
 const DEFAULT_TOOLTIP_POSITIONS = [
@@ -37,14 +40,12 @@ export class NgxTooltipDirective implements OnInit, OnDestroy {
   private _destroy$ = new Subject<void>();
   private _isOpen = false;
   private _overlay = inject(Overlay);
-  private _cdr = inject(ChangeDetectorRef);
   private _overlayRef?: OverlayRef;
   private _elementRef = inject(ElementRef);
   private _ngZone = inject(NgZone);
   private _tooltipPortal!: ComponentPortal<NgxTooltipComponent>;
   private _tooltipComponent!: NgxTooltipComponent;
   private _positions: ConnectionPositionPair[] = DEFAULT_TOOLTIP_POSITIONS;
-  private _positionMap = POSITION_MAP;
 
   @Input() ngxTooltip!: string;
   @Input() panelClass: string = '';
@@ -61,36 +62,24 @@ export class NgxTooltipDirective implements OnInit, OnDestroy {
       .pipe(takeUntil(this._destroy$))
       .subscribe((change: ConnectedOverlayPositionChange) => {
         this._updateClassMap(change);
-        if (
-          change.scrollableViewProperties.isOriginOutsideView &&
-          this._overlayRef?.hasAttached()
-        ) {
-          this.hide();
-        }
       });
 
     return new OverlayConfig({
       panelClass: ['ngx-tooltip-panel', this.panelClass],
       positionStrategy: streategy,
-      scrollStrategy: this._overlay.scrollStrategies.reposition(),
+      scrollStrategy: this._overlay.scrollStrategies.reposition({
+        scrollThrottle: 20,
+      }),
     });
   }
 
   private _updateClassMap(change: ConnectedOverlayPositionChange) {
-    const { connectionPair } = change;
-    for (const pos in this._positionMap) {
-      const configConnectedPair = this._positionMap[pos as PositionType];
-      if (
-        configConnectedPair.originX === connectionPair.originX &&
-        configConnectedPair.originY === connectionPair.originY &&
-        configConnectedPair.overlayX === connectionPair.overlayX &&
-        configConnectedPair.overlayX === connectionPair.overlayX
-      ) {
-        if (this._tooltipComponent) {
-          this._tooltipComponent.placementClass.set(pos as PositionType);
-          this._tooltipComponent.updateStyle();
-        }
-      }
+    const positionClass = getPositionClass(change);
+    if (positionClass && this._tooltipComponent) {
+      this._tooltipComponent.placementClass.set(
+        positionClass as TooltipPositionType
+      );
+      this._tooltipComponent.detectChanges();
     }
   }
 
@@ -127,6 +116,7 @@ export class NgxTooltipDirective implements OnInit, OnDestroy {
 
       if (this._tooltipComponent) {
         this._tooltipComponent.title.set(this.ngxTooltip);
+        this._tooltipComponent.detectChanges();
       }
     }
     this._initVisibleChange(true);
