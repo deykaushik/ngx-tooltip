@@ -4,6 +4,7 @@ import {
   Overlay,
   OverlayConfig,
   OverlayRef,
+  ScrollDispatcher,
 } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import {
@@ -45,7 +46,14 @@ export class NgxTooltipDirective implements OnInit, OnDestroy {
   private _ngZone = inject(NgZone);
   private _tooltipPortal!: ComponentPortal<NgxTooltipComponent>;
   private _tooltipComponent!: NgxTooltipComponent;
+  private _scrollDispatcher = inject(ScrollDispatcher);
   private _positions: ConnectionPositionPair[] = DEFAULT_TOOLTIP_POSITIONS;
+  private _observer$!: IntersectionObserver;
+  private _observerOptions = {
+    root: null,
+    rootMargin: '0px',
+    threshold: 0.5,
+  };
 
   @Input() ngxTooltip!: string;
   @Input() panelClass: string = '';
@@ -56,7 +64,10 @@ export class NgxTooltipDirective implements OnInit, OnDestroy {
       .position()
       .flexibleConnectedTo(this._elementRef)
       .withPositions([...this._positions])
-      .withFlexibleDimensions(false);
+      .withFlexibleDimensions(false)
+      .withScrollableContainers(
+        this._scrollDispatcher.getAncestorScrollContainers(this._elementRef)
+      );
 
     streategy.positionChanges
       .pipe(takeUntil(this._destroy$))
@@ -115,6 +126,13 @@ export class NgxTooltipDirective implements OnInit, OnDestroy {
       ).instance;
 
       if (this._tooltipComponent) {
+        this._observer$ = new IntersectionObserver(
+          this._intersectionCallback,
+          this._observerOptions
+        );
+
+        this._observer$.observe(this._elementRef.nativeElement);
+
         this._tooltipComponent.title.set(this.ngxTooltip);
         this._tooltipComponent.detectChanges();
       }
@@ -122,8 +140,17 @@ export class NgxTooltipDirective implements OnInit, OnDestroy {
     this._initVisibleChange(true);
   }
 
+  private _intersectionCallback = (entries: IntersectionObserverEntry[]) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) {
+        this.hide();
+      }
+    });
+  };
+
   hide() {
     if (this._overlayRef && this._overlayRef.hasAttached()) {
+      this._observer$.disconnect();
       this._overlayRef?.detach();
       this._initVisibleChange(false);
     }
