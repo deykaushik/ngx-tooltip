@@ -131,6 +131,10 @@ export class NgxTooltipDirective implements OnInit, OnDestroy {
 
   private _initVisibleChange(isVisible: boolean) {
     this._isOpen = isVisible;
+    if (this._tooltipComponent) {
+      this._tooltipComponent.isVisible.set(isVisible);
+      this._tooltipComponent.detectChanges();
+    }
     this.visibleChange.next(this._isOpen);
   }
 
